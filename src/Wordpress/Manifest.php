@@ -2,6 +2,8 @@
 
 namespace NanoSoup\Zeus\Wordpress;
 
+use NanoSoup\Zeus\ModuleConfig;
+
 /**
  * Class Manifest
  * @package Zeus\Wordpress
@@ -16,8 +18,14 @@ class Manifest
     /**
      * Manifest constructor.
      */
-    public function __construct()
+    public function __construct($moduleConfig)
     {
+        $config = new ModuleConfig($moduleConfig);
+
+        if ($config->getOption('disabled')) {
+            return;
+        }
+
         $this->loadManifest();
 
         if (!is_admin() && $GLOBALS['pagenow'] !== 'wp-login.php') {

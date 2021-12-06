@@ -2,7 +2,7 @@
 
 namespace NanoSoup\Zeus\Wordpress;
 
-use Timber\User;
+use NanoSoup\Zeus\ModuleConfig;
 
 /**
  * Class Yoast
@@ -13,14 +13,26 @@ class Yoast
     /**
      * Yoast constructor.
      */
-    public function __construct()
+    public function __construct($moduleConfig)
     {
+        $config = new ModuleConfig($moduleConfig);
+
+        if ($config->getOption('disabled')) {
+            return;
+        }
+
+        if ($config->getOption('disableAdminFilters')) {
+            add_action('admin_init', [$this, 'removeYoastAdminFilters'], 20);
+        }
+
+        if ($config->getOption('disableOptimisations')) {
+            add_filter('wpseo_metabox_prio', [$this, 'yoastToBottom']);
+            add_filter('wpseo_canonical', [$this, 'wpseoRemovePageUrl']);
+            add_filter('wpseo_breadcrumb_single_link_info', [$this, 'shortenYoastBreadcrumbTitle'], 10);
+            add_filter('robots_txt', [$this, 'addSitemapToRobots'], 10, 1);
+        }
+
         add_theme_support('yoast-seo-breadcrumbs');
-        add_action('admin_init', [$this, 'removeYoastAdminFilters'], 20);
-        add_filter('wpseo_metabox_prio', [$this, 'yoastToBottom']);
-        add_filter('wpseo_canonical', [$this, 'wpseoRemovePageUrl']);
-        add_filter('wpseo_breadcrumb_single_link_info', [$this, 'shortenYoastBreadcrumbTitle'], 10);
-        add_filter('robots_txt', [$this, 'addSitemapToRobots'], 10, 1);
     }
 
     /**

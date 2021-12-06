@@ -2,6 +2,8 @@
 
 namespace NanoSoup\Zeus\Wordpress;
 
+use NanoSoup\Zeus\ModuleConfig;
+
 /**
  * Class ACF
  * @package Zeus\Wordpress
@@ -11,17 +13,31 @@ class ACF
     /**
      * ACF constructor.
      */
-    public function __construct()
+    public function __construct($moduleConfig)
     {
-        //add_filter('acf/settings/show_admin', '__return_false');
-        add_action('after_setup_theme', [$this, 'setupOptionsPage']);
-        add_action('acf/init', [$this, 'registerGoogleMapsKey']);
-        add_filter('allowed_block_types', [$this,  'allowedBlocks']);
+        $config = new ModuleConfig($moduleConfig);
 
-        // add action for logged-in users
-        add_action( "wp_ajax_acf/ajax/check_screen", [$this,  'allowedBlocks'], 1);
-        add_action( "wp_ajax_nopriv_acf/ajax/check_screen", [$this,  'allowedBlocks'], 1);
-        add_filter('block_categories', [$this, 'registerCustomBlockCats'], 10, 1);
+        if ($config->getOption('disabled')) {
+            return;
+        }
+
+        if ($config->getOption('hideAdmin')) {
+            add_filter('acf/settings/show_admin', '__return_false');
+        }
+
+        if ($config->getOption('settingsPage')) {
+            add_action('after_setup_theme', [$this, 'setupOptionsPage']);
+        }
+
+        if ($config->getOption('allowedBlocks')) {
+            add_filter('allowed_block_types', [$this,  'allowedBlocks']);
+            // add action for logged-in users
+            add_action("wp_ajax_acf/ajax/check_screen", [$this,  'allowedBlocks'], 1);
+            add_action("wp_ajax_nopriv_acf/ajax/check_screen", [$this,  'allowedBlocks'], 1);
+            add_filter('block_categories', [$this, 'registerCustomBlockCats'], 10, 1);
+        }
+
+        add_action('acf/init', [$this, 'registerGoogleMapsKey']);
     }
 
     /**

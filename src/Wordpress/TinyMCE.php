@@ -2,6 +2,8 @@
 
 namespace NanoSoup\Zeus\Wordpress;
 
+use NanoSoup\Zeus\ModuleConfig;
+
 /**
  * Class TinyMCE
  * @package Zeus\Wordpress
@@ -11,8 +13,14 @@ class TinyMCE
     /**
      * TinyMCE constructor.
      */
-    public function __construct()
+    public function __construct($moduleConfig)
     {
+        $config = new ModuleConfig($moduleConfig);
+
+        if ($config->getOption('disabled')) {
+            return;
+        }
+
         add_filter('tiny_mce_before_init', [__CLASS__, 'registerFormats']);
         add_action('init', [__CLASS__, 'tinymceButtons']);
     }
@@ -38,7 +46,6 @@ class TinyMCE
         $settings['style_formats'] = json_encode($formats);
 
         return $settings;
-
     }
 
     /**

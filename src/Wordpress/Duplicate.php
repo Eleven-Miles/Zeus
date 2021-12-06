@@ -2,6 +2,8 @@
 
 namespace NanoSoup\Zeus\Wordpress;
 
+use NanoSoup\Zeus\ModuleConfig;
+
 /**
  * Class Duplicate
  * @package Zeus\Wordpress
@@ -11,8 +13,14 @@ class Duplicate
     /**
      * Duplicate constructor.
      */
-    public function __construct()
+    public function __construct($moduleConfig)
     {
+        $config = new ModuleConfig($moduleConfig);
+
+        if ($config->getOption('disabled')) {
+            return;
+        }
+
         add_action('admin_action_duplicate_post_as_draft', [$this, 'duplicatePostAsDraft']);
         add_filter('post_row_actions', [$this, 'duplicatePostLink'], 10, 2);
         add_filter('page_row_actions', [$this, 'duplicatePostLink'], 10, 2);

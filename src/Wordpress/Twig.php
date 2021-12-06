@@ -2,24 +2,25 @@
 
 namespace NanoSoup\Zeus\Wordpress;
 
-use NanoSoup\Zeus\Account\BigLogin;
-use NanoSoup\Zeus\Products\Products;
-use NanoSoup\Zeus\SampleBasket\SampleBasket;
 use HelloNico\Twig\DumpExtension;
 use Timber\Timber;
-use Twig\Loader\FilesystemLoader;
 use Twig\Environment;
 use Twig\TwigFunction;
-use Timber\Site;
-use Timber\URLHelper;
+use NanoSoup\Zeus\ModuleConfig;
 
 class Twig
 {
     /**
      * Twig constructor.
      */
-    public function __construct()
+    public function __construct($moduleConfig)
     {
+        $config = new ModuleConfig($moduleConfig);
+
+        if ($config->getOption('disabled')) {
+            return;
+        }
+
         add_action('init', [$this, 'additionalTwigFileLoaderPaths']);
         add_filter('timber/twig', [$this, 'registerTwigFunctions']);
         add_filter('timber_context', [$this, 'addToContext']);

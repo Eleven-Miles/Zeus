@@ -2,7 +2,7 @@
 
 namespace NanoSoup\Zeus\Wordpress;
 
-use WP_Error;
+use NanoSoup\Zeus\ModuleConfig;
 
 /**
  * Class OptimiseWP
@@ -13,44 +13,59 @@ class OptimiseWP
     /**
      * OptimiseWP constructor.
      */
-    public function __construct()
+    public function __construct($moduleConfig)
     {
-        /** get rid of all the stuff we don't need from wp */
-        add_action('wp_enqueue_scripts', [$this, 'removeUnused'], 100);
-        add_action('init', [$this, 'disableEmojis']);
-        remove_action('wp_head', 'wp_generator');
-        remove_action('wp_head', 'rsd_link');
-        remove_action('wp_head', 'wlwmanifest_link');
-        remove_action('wp_head', 'wp_shortlink_wp_head');
-        add_action('wp_default_scripts', [$this, 'removeJquery']);
-        add_action('login_enqueue_scripts', [$this, 'adminLogo']);
-        add_action('wp_logout', [$this, 'unlog']);
-        add_filter('xmlrpc_enabled', '__return_false');
-        add_filter('rest_endpoints', [$this, 'disableRestApi']);
+        $config = new ModuleConfig($moduleConfig);
 
-        $user = wp_get_current_user();
-        $roles = [
-            'administrator',
-            'report_manager',
-            'stock_manager',
-            'account_manager',
-            'seo_manager',
-            'seo_editor',
-            'editor',
-            'author',
-            'contributor',
-        ];
-        if (count(array_intersect($roles, $user->roles)) <= 0) {
-            add_filter('show_admin_bar', '__return_false');
+        if ($config->getOption('disabled')) {
+            return;
         }
-    }
 
-    /**
-     *
-     */
-    public function unlog(){
-        wp_redirect(site_url());
-        exit;
+        if ($config->getOption('disableJquery')) {
+            add_action('wp_enqueue_scripts', [$this, 'removeJqueryScript']);
+            add_action('wp_default_scripts', [$this, 'removeJquery']);
+        }
+
+        if ($config->getOption('disableScripts')) {
+            add_action('wp_enqueue_scripts', [$this, 'removeUnused']);
+        }
+
+        if ($config->getOption('diableEmojis')) {
+            add_action('init', [$this, 'disableEmojis']);
+        }
+
+        if ($config->getOption('disableHeadLinks')) {
+            remove_action('wp_head', 'wp_generator');
+            remove_action('wp_head', 'rsd_link');
+            remove_action('wp_head', 'wlwmanifest_link');
+            remove_action('wp_head', 'wp_shortlink_wp_head');
+        }
+
+        if ($config->getOption('disableRestAPI')) {
+            add_filter('rest_endpoints', [$this, 'disableRestApi']);
+        }
+
+        if ($config->getOption('disableAdminBar')) {
+            $user = wp_get_current_user();
+            $roles = [
+                'administrator',
+                'report_manager',
+                'stock_manager',
+                'account_manager',
+                'seo_manager',
+                'seo_editor',
+                'editor',
+                'author',
+                'contributor',
+            ];
+
+            if (count(array_intersect($roles, $user->roles)) <= 0) {
+                add_filter('show_admin_bar', '__return_false');
+            }
+        }
+
+        add_action('login_enqueue_scripts', [$this, 'adminLogo']);
+        add_filter('xmlrpc_enabled', '__return_false');
     }
 
     /**
@@ -58,9 +73,10 @@ class OptimiseWP
      */
     public function adminLogo()
     {
-        ?>
+?>
         <style>
-            #login h1 a, .login h1 a {
+            #login h1 a,
+            .login h1 a {
                 background-image: url(<?= get_stylesheet_directory_uri(); ?>/public/dist/svgs/logo.svg);
                 height: 65px;
                 width: 320px;
@@ -69,35 +85,44 @@ class OptimiseWP
                 padding-bottom: 30px;
             }
         </style>
-        <?php
+<?php
     }
 
     /**
      *
      */
-    public function removeUnused()
+    public function removeUnusedScripts()
     {
-        wp_deregister_style('dd_lastviewed_css');
-        wp_deregister_style('contact-form-7');
         wp_deregister_script('wp-embed');
         add_filter('the_generator', [$this, 'removeVersion']);
         add_filter('style_loader_src', [$this, 'sdtRemoveVerCssJs'], 9999);
         add_filter('script_loader_src', [$this, 'sdtRemoveVerCssJs'], 9999);
+    }
+
+    /**
+     *
+     */
+    public function removeJqueryScript()
+    {
         wp_dequeue_script('jquery');
     }
 
     /**
+     *
+     * if ($config->getOption('disableRestAPI')) {
+     * public function disableRestApi($endpoints)}
      * @param $endpoints
      * @return mixed
      */
+
     public function disableRestApi($endpoints)
     {
-        if ( isset( $endpoints['/wp/v2/users'] ) ) {
-            unset( $endpoints['/wp/v2/users'] );
+        if (isset($endpoints['/wp/v2/users'])) {
+            unset($endpoints['/wp/v2/users']);
         }
 
-        if ( isset( $endpoints['/wp/v2/users/(?P<id>[\d]+)'] ) ) {
-            unset( $endpoints['/wp/v2/users/(?P<id>[\d]+)'] );
+        if (isset($endpoints['/wp/v2/users/(?P<id>[\d]+)'])) {
+            unset($endpoints['/wp/v2/users/(?P<id>[\d]+)']);
         }
 
         return $endpoints;

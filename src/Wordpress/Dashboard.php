@@ -2,6 +2,8 @@
 
 namespace NanoSoup\Zeus\Wordpress;
 
+use NanoSoup\Zeus\ModuleConfig;
+
 /**
  * Class Dashboard
  * @package Zeus\Wordpress
@@ -11,22 +13,37 @@ class Dashboard
     /**
      * Dashboard constructor.
      */
-    public function __construct()
+    public function __construct($moduleConfig)
     {
-        add_action('wp_dashboard_setup', [$this, 'disableDefaultDashboardWidgets'], 999);
-        add_action('current_screen', [$this, 'disableDragMetabox']);
-        add_action('admin_menu', [$this, 'removeAdminMenus']);
-        add_action('init', [$this, 'removeCommentSupport'], 100);
-        add_action('wp_before_admin_bar_render', [$this, 'adminBarRender']);
+        $config = new ModuleConfig($moduleConfig);
+
+        if ($config->getOption('disabled')) {
+            return;
+        }
+
+        if ($config->getOption('disableWidgets')) {
+            add_action('wp_dashboard_setup', [$this, 'disableDefaultDashboardWidgets'], 999);
+            add_action('current_screen', [$this, 'disableDragMetabox']);
+            remove_action('welcome_panel', 'wp_welcome_panel');
+        }
+
+        if ($config->getOption('disableComments')) {
+            add_action('admin_menu', [$this, 'removeAdminCommentsMenu']);
+            add_action('init', [$this, 'removeCommentSupport'], 100);
+            add_action('wp_before_admin_bar_render', [$this, 'adminBarRender']);
+        }
+
+        if ($config->getOption('removeAdminColumns')) {
+            add_filter('manage_edit-post_columns', [$this, 'removeColumnsFromAdmin']);
+            add_filter('manage_edit-page_columns', [$this, 'removeColumnsFromAdmin']);
+            add_filter('manage_edit-brand_columns', [$this, 'removeColumnsFromAdmin']);
+            add_filter('manage_media_columns', [$this, 'removeColumnsFromAdmin']);
+        }
+
         add_action('after_setup_theme', [$this, 'themeSupport']);
         add_action('after_setup_theme', [$this, 'registerNavMenus']);
-        add_filter('manage_edit-post_columns', [$this, 'removeColumnsFromAdmin']);
-        add_filter('manage_edit-page_columns', [$this, 'removeColumnsFromAdmin']);
-        add_filter('manage_edit-brand_columns', [$this, 'removeColumnsFromAdmin']);
-        add_filter('manage_media_columns', [$this, 'removeColumnsFromAdmin']);
         add_action('customize_register', [$this, 'removeItemsFromCustomizer'], 15);
 
-        remove_action('welcome_panel', 'wp_welcome_panel');
         remove_action('wp_before_admin_bar_render', 'wp_customize_support_script');
     }
 
@@ -57,7 +74,7 @@ class Dashboard
     /**
      * Remove comment management in admin
      */
-    public function removeAdminMenus()
+    public function removeAdminCommentsMenu()
     {
         remove_menu_page('edit-comments.php');
     }
