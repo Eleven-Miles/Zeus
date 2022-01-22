@@ -1,5 +1,5 @@
 {
-  "name": "nanosoup/zeus",
+  "name": "tj-digital/zeus",
   "description": "Zeus Bundle",
   "require": {
     "php": ">=7.2"
