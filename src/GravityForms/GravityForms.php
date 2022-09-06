@@ -3,7 +3,7 @@
 namespace NanoSoup\Zeus\GravityForms;
 
 use GFAPI;
-use Timber\User;
+use GFCommon;
 use NanoSoup\Zeus\ModuleConfig;
 
 /**
@@ -102,14 +102,21 @@ class GravityForms
      */
     public function pushSubmissionGtm($confirmation, $form, $entry, $ajax)
     {
-        $confirmation .=
-            "<script>" .
-            "    window.dataLayer = window.dataLayer || [];" .
-            "    window.dataLayer.push({" .
-            "        'event': 'gravityFormSubmitted'," .
-            "        'formId': '" . $form['id'] . "'" .
-            "    });" .
-            "</script>";
+        if (!is_string($confirmation)) {
+            return $confirmation;
+        }
+
+        $confirmation .= GFCommon::get_inline_script_tag(
+            "window.top.jQuery(document).on('gform_confirmation_loaded', function () {
+                console.log('gform_confirmation_loaded running');
+
+                window.dataLayer = window.dataLayer || [];
+                window.dataLayer.push({
+                    'event': 'gravityFormSubmitted',
+                    'formId': '{$form['id']}'
+                });
+            });"
+        );
 
         return $confirmation;
     }

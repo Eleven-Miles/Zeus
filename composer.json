@@ -1,5 +1,5 @@
 {
-  "name": "tj-digital/zeus",
+  "name": "eleven-miles/zeus",
   "description": "Zeus Bundle",
   "require": {
     "php": ">=7.2"
@@ -10,8 +10,8 @@
   },
   "authors": [
     {
-      "name": "TJ Digital",
-      "email": "dev@thinkingjuice.co.uk"
+      "name": "Eleven Miles",
+      "email": "dev@elevenmiles.com"
     }
   ],
   "autoload": {
