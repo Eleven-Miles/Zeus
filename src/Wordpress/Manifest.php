@@ -29,12 +29,12 @@ class Manifest
         $this->loadManifest();
 
         if (!is_admin() && $GLOBALS['pagenow'] !== 'wp-login.php') {
-            add_action('init', [$this, 'preload']);
+            // Priority 20 ensures our styles load after other common plugins i.e. WooCommerce
+            // so that we can override more easily
+            add_action('wp_enqueue_scripts', [$this, 'preload'], 20);
         }
 
         add_action('enqueue_block_editor_assets', [$this, 'blockEditorAssets']);
-        add_action('after_setup_theme', [$this, 'wysiwygEditorAssets']);
-        add_action('wp_head', [$this, 'localizeScript']);
     }
 
     /**
@@ -54,22 +54,30 @@ class Manifest
      */
     public function preload()
     {
-        if (!is_iterable($this->manifestFiles)) return;
+        if (!is_iterable($this->manifestFiles)) {
+            return;
+        }
 
         foreach ($this->manifestFiles as $name => $file) {
             // Skip editor styles from preload
-            if (strpos($name, 'editor') !== false || strpos($name, '.map')) continue;
-
-            $filename = get_template_directory_uri() . "/public/dist/$file";
-
-            if (strpos($file, '.js')) {
-                wp_enqueue_script($name, $filename, [], null, true);
-                header("Link: <$filename>;as=script;rel=preload", false);
+            if (strpos($name, 'editor') !== false || strpos($name, '.map')) {
+                continue;
             }
 
-            if (strpos($file, '.css')) {
+            $filename = $file;
+
+            if (strpos($name, 'app.js') !== false) {
+                wp_enqueue_script($name, $filename, [], null, true);
+                header("Link: <$filename>;as=script;rel=prefetch;crossorigin=anonymous;", false);
+            }
+
+            if (strpos($file, '.css') !== false) {
                 wp_enqueue_style($name, $filename);
-                header("Link: <$filename>;as=style;rel=preload", false);
+                header("Link: <$filename>;as=style;rel=prefetch;crossorigin=anonymous;", false);
+            }
+
+            if (strpos($file, '.woff') !== false || strpos($file, '.ttf') !== false) {
+                header("Link: <$filename>;as=font;rel=preload;crossorigin=anonymous;", false);
             }
         }
     }
@@ -81,31 +89,13 @@ class Manifest
     {
         $editor_style_file = $this->manifestFiles['editor.css'];
         $editor_script_file = $this->manifestFiles['editor.js'];
-        wp_enqueue_style('block-editor-styles', get_theme_file_uri() . "/public/dist/{$editor_style_file}", false, '1.0', 'all');
-        wp_enqueue_script('block-editor-js', get_theme_file_uri() . "/public/dist/{$editor_script_file}");
-        add_editor_style(get_theme_file_uri() . "/public/dist/{$editor_style_file}");
-    }
 
-    /**
-     * This will add styles to the TinyMCE editor in the WP Admin
-     */
-    public function wysiwygEditorAssets()
-    {
-        $editor_style_file = $this->manifestFiles['editor.css'];
-        add_editor_style(get_theme_file_uri() . "/public/dist/{$editor_style_file}");
-    }
-
-    /**
-     * Injects variables in head to ensure they will be available to any assets
-     * that have been pre-loaded via
-     */
-    public function localizeScript()
-    {
-        $object = [
-            'ajax_url' => admin_url('admin-ajax.php'),
-            'security' => wp_create_nonce()
-        ];
-        $script = "var wp_ajax = " . wp_json_encode($object) . ';';
-        echo "<script>$script</script>";
+        wp_enqueue_style('block-editor-styles', get_site_url() . $editor_style_file, false, '1.0', 'all');
+        wp_enqueue_script('block-editor-js', get_site_url() . $editor_script_file, [], '1.0', true);
+        add_editor_style($editor_style_file);
+        wp_localize_script('block-editor-js', 'wpAjaxAdmin', [
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'securityToken' => wp_create_nonce('ajax-security'),
+        ]);
     }
 }
