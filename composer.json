@@ -2,7 +2,7 @@
   "name": "eleven-miles/zeus",
   "description": "Zeus Bundle",
   "require": {
-    "php": ">=7.2"
+    "php": ">=8.2"
   },
   "require-dev": {
     "squizlabs/php_codesniffer": "^3.3",

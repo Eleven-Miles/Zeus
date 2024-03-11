@@ -34,7 +34,7 @@ class Manifest
             add_action('wp_enqueue_scripts', [$this, 'preload'], 20);
         }
 
-        add_action('enqueue_block_editor_assets', [$this, 'blockEditorAssets']);
+        add_action('admin_enqueue_scripts', [$this, 'blockEditorAssets']);
     }
 
     /**
@@ -58,13 +58,18 @@ class Manifest
             return;
         }
 
+        $theme_public_path = get_template_directory_uri() . "/public/dist/";
+
         foreach ($this->manifestFiles as $name => $file) {
             // Skip editor styles from preload
             if (strpos($name, 'editor') !== false || strpos($name, '.map')) {
                 continue;
             }
 
-            $filename = $file;
+            // Check to see if file contains $theme_public_path, if not add it
+            $filename = (strpos($file, $theme_public_path) !== false) ?
+                $file :
+                $theme_public_path . $file;
 
             if (strpos($name, 'app.js') !== false) {
                 wp_enqueue_script($name, $filename, [], null, true);
