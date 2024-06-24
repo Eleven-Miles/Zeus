@@ -38,6 +38,8 @@ class ACF
         }
 
         add_action('acf/init', [$this, 'registerGoogleMapsKey']);
+        
+        add_action( 'enqueue_block_editor_assets', [$this, 'enqueueBlockStyles'] );
     }
 
     /**
@@ -121,4 +123,52 @@ class ACF
 
         return $allowed;
     }
+
+    /**
+     * Enqueue app and editor styles in admin area
+     */
+    public function enqueueBlockStyles() {
+
+        $manifest_path = get_template_directory() . '/public/dist/manifest.json';
+
+		if (file_exists($manifest_path)) {
+            $manifest_files = json_decode(file_get_contents($manifest_path), true);
+
+			foreach ($manifest_files as $name => $file) {
+				// Skip editor styles from preload
+
+				if ( ($name === 'editor.css' ) || ($name === 'app.css' ) ) {
+
+					$filename = "/public/dist/$file";
+
+					wp_enqueue_style(
+						'block-' . $name ,
+						get_theme_file_uri( $filename ),
+						array(),
+						filemtime( get_theme_file_path( $filename ) ),
+						'all'
+					);
+
+				}
+
+				if ( ($name == 'editor.js') ) {
+
+					$filename = "/public/dist/$file";
+
+					wp_enqueue_script(
+						'block-' . $name ,
+						get_theme_file_uri( $filename ),
+						array(),
+						filemtime( get_theme_file_path( $filename ) ),
+						'all'
+					);
+
+				}
+	
+			}
+
+        }
+
+    }
+
 }
